@@ -256,3 +256,55 @@ Use these steps to verify completed runtime or build changes:
    - `docker compose --profile interop up --build --abort-on-container-exit --exit-code-from client client`
 
 Before committing, ensure relevant verification passes and note any skipped runtime checks.
+
+## Third-Party Interop Targets
+
+Other OPC UA stacks the client can probe for cross-stack interop checks. These are external
+images/projects, not maintained here. Add new targets as they are exercised.
+
+### OPC Foundation .NET Reference Server (ECC preview)
+
+- **Image:** `ghcr.io/opcfoundation/uanetstandard/refserver:latest` (currently `1.6.0-preview`)
+- **Why:** advertises the full ECC matrix (NIST P256/P384, Brainpool P256r1/P384r1) plus RSA and
+  RSA-DH endpoints, so it is the canonical peer for verifying our ECC probe paths.
+- **Caveats:** the `:1.5.374` release tag does **not** advertise ECC; use `:latest` for ECC interop.
+  `curve25519`/`curve448` and the stricter RSA OAEP/PSS policies are not advertised by this build.
+
+One-time network setup (so the client container can DNS-resolve the server's advertised hostname):
+
+```bash
+docker network create ecc-net
+```
+
+Start the refserver:
+
+```bash
+docker run -d --rm \
+  --name uanet-refserver \
+  --hostname uanet-refserver \
+  --network ecc-net \
+  -p 62541:62541 \
+  ghcr.io/opcfoundation/uanetstandard/refserver:latest \
+  -c -a
+```
+
+Flags: `-c` logs to console (so `docker logs` works), `-a` auto-accepts client certificates
+(essential — without it the secure-channel handshake fails with `Bad_SecurityChecksFailed`). Drop
+`-p 62541:62541` if you do not need host access to the server.
+
+Probe it from the demo client on the same network:
+
+```bash
+docker run --rm \
+  --network ecc-net \
+  -v "$PWD/data/client-dotnet:/data/client" \
+  digitalpetri/ecc-demo-client:latest \
+  opc.tcp://uanet-refserver:62541/Quickstarts/ReferenceServer
+```
+
+Tear down when done:
+
+```bash
+docker rm -f uanet-refserver
+docker network rm ecc-net    # optional
+```
