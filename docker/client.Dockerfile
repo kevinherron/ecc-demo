@@ -8,6 +8,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY scripts/bootstrap-milo.sh scripts/bootstrap-milo.sh
+COPY vendor/milo vendor/milo
 RUN ./scripts/bootstrap-milo.sh
 
 COPY gradle gradle

@@ -8,7 +8,8 @@
 build/
 */build/
 data/
-vendor/milo/
+vendor/milo/**/target/
+vendor/milo/**/build/
 
 *.class
 *.log

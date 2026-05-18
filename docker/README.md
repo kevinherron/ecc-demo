@@ -1,5 +1,13 @@
 # Docker
 
+Initialize the Milo submodule before building. The Dockerfiles copy `vendor/milo`
+into the build context so the resulting image is pinned to the SHA tracked in
+this repository:
+
+```bash
+git submodule update --init --recursive
+```
+
 Build the images:
 
 ```bash
