@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.collections.iterator
 import kotlin.math.roundToInt
+import org.eclipse.milo.opcua.stack.core.NodeIds
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 
 private const val BAR_WIDTH = 28
 private const val LOG_PROGRESS_INTERVAL_SECONDS = 5L
@@ -594,28 +596,50 @@ private enum class LocalSupportGap {
 private enum class ResultCategory(val displayName: String) {
   NO_SECURITY("No Security"),
   RSA("RSA"),
-  RSA_DH("RSA-DH"),
-  ECC_NIST("ECC NIST"),
-  ECC_BRAINPOOL("ECC Brainpool"),
-  ECC_CURVE("ECC Curve"),
+  RSA_SHA256_CERTIFICATE("RsaSha256"),
+  ECC_NIST_P256_CERTIFICATE("EccNistP256"),
+  ECC_NIST_P384_CERTIFICATE("EccNistP384"),
+  ECC_BRAINPOOL_P256R1_CERTIFICATE("EccBrainpoolP256r1"),
+  ECC_BRAINPOOL_P384R1_CERTIFICATE("EccBrainpoolP384r1"),
+  ECC_CURVE25519_CERTIFICATE("EccCurve25519"),
+  ECC_CURVE448_CERTIFICATE("EccCurve448"),
   OTHER("Other");
 
   companion object {
-    fun from(entry: ProbeEntry): ResultCategory =
-        when (val policy = entry.securityPolicy.orEmpty()) {
-          "None" -> NO_SECURITY
-          "Basic256Sha256",
-          "Aes128_Sha256_RsaOaep",
-          "Aes256_Sha256_RsaPss" -> RSA
-          else ->
-              when {
-                policy.startsWith("RSA_DH_") -> RSA_DH
-                policy.startsWith("ECC_nist") -> ECC_NIST
-                policy.startsWith("ECC_brainpool") -> ECC_BRAINPOOL
-                policy.startsWith("ECC_curve") -> ECC_CURVE
-                else -> OTHER
+    private val OLD_RSA_POLICIES =
+        setOf(
+            "Basic256Sha256",
+            "Aes128_Sha256_RsaOaep",
+            "Aes256_Sha256_RsaPss",
+        )
+
+    private val CERTIFICATE_TYPE_CATEGORIES =
+        mapOf(
+            NodeIds.RsaSha256ApplicationCertificateType to RSA_SHA256_CERTIFICATE,
+            NodeIds.EccNistP256ApplicationCertificateType to ECC_NIST_P256_CERTIFICATE,
+            NodeIds.EccNistP384ApplicationCertificateType to ECC_NIST_P384_CERTIFICATE,
+            NodeIds.EccBrainpoolP256r1ApplicationCertificateType to
+                ECC_BRAINPOOL_P256R1_CERTIFICATE,
+            NodeIds.EccBrainpoolP384r1ApplicationCertificateType to
+                ECC_BRAINPOOL_P384R1_CERTIFICATE,
+            NodeIds.EccCurve25519ApplicationCertificateType to ECC_CURVE25519_CERTIFICATE,
+            NodeIds.EccCurve448ApplicationCertificateType to ECC_CURVE448_CERTIFICATE,
+        )
+
+    fun from(entry: ProbeEntry): ResultCategory {
+      val policy = entry.securityPolicy.orEmpty()
+
+      if (policy == "None") return NO_SECURITY
+      if (policy in OLD_RSA_POLICIES) return RSA
+
+      val certificateType =
+          runCatching {
+                SecurityPolicy.valueOf(policy).profile.preferredCertificateTypeId().orElse(null)
               }
-        }
+              .getOrNull()
+
+      return CERTIFICATE_TYPE_CATEGORIES[certificateType] ?: OTHER
+    }
   }
 }
 

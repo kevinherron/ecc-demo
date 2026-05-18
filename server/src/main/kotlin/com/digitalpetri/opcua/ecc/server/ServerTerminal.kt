@@ -3,6 +3,8 @@ package com.digitalpetri.opcua.ecc.server
 import com.github.ajalt.mordant.rendering.TextColors.brightBlue
 import com.github.ajalt.mordant.terminal.Terminal
 import kotlin.collections.iterator
+import org.eclipse.milo.opcua.stack.core.NodeIds
+import org.eclipse.milo.opcua.stack.core.security.SecurityPolicy
 
 private const val CERTIFICATE_TYPE_WIDTH = 42
 private const val MODE_WIDTH = 17
@@ -84,8 +86,12 @@ internal class ServerTerminal(
       return
     }
 
-    for ((family, familyEndpoints) in endpointGroups(endpoints)) {
-      terminal.println("  $family (${familyEndpoints.size} advertised)")
+    val groups = endpointGroups(endpoints)
+    for (category in EndpointCategory.entries) {
+      val categoryEndpoints = groups[category].orEmpty()
+      if (categoryEndpoints.isEmpty()) continue
+
+      terminal.println("  ${category.displayName} (${categoryEndpoints.size} advertised)")
       terminal.println(
           "    " +
               fixed("POLICY", POLICY_WIDTH) +
@@ -96,7 +102,7 @@ internal class ServerTerminal(
               " CERTIFICATE"
       )
 
-      for (endpoint in familyEndpoints) {
+      for (endpoint in categoryEndpoints) {
         terminal.println(endpointLine(endpoint))
       }
       terminal.println()
@@ -105,8 +111,8 @@ internal class ServerTerminal(
 
   private fun endpointGroups(
       endpoints: List<ServerEndpointSummary>
-  ): Map<String, List<ServerEndpointSummary>> =
-      sortedEndpoints(endpoints).groupBy { policyFamily(it.securityPolicy) }
+  ): Map<EndpointCategory, List<ServerEndpointSummary>> =
+      sortedEndpoints(endpoints).groupBy { EndpointCategory.from(it.securityPolicy) }
 
   private fun sortedEndpoints(endpoints: List<ServerEndpointSummary>): List<ServerEndpointSummary> =
       endpoints.sortedWith(
@@ -128,17 +134,53 @@ internal class ServerTerminal(
           (endpoint.certificateType ?: "none")
 }
 
-/** Returns the broad security family used to group policy names in terminal output. */
-internal fun policyFamily(policy: String): String =
-    when {
-      policy == "None" -> "None"
-      policy.startsWith("ECC_nist") -> "ECC NIST"
-      policy.startsWith("ECC_brainpool") -> "ECC Brainpool"
-      policy.startsWith("ECC_curve") -> "ECC Curve"
-      policy.startsWith("RSA_DH") -> "RSA-DH"
-      policy.startsWith("Aes") || policy.startsWith("Basic") -> "RSA"
-      else -> "Other"
+private enum class EndpointCategory(val displayName: String) {
+  NONE("None"),
+  RSA("RSA"),
+  RSA_SHA256_CERTIFICATE("RsaSha256"),
+  ECC_NIST_P256_CERTIFICATE("EccNistP256"),
+  ECC_NIST_P384_CERTIFICATE("EccNistP384"),
+  ECC_BRAINPOOL_P256R1_CERTIFICATE("EccBrainpoolP256r1"),
+  ECC_BRAINPOOL_P384R1_CERTIFICATE("EccBrainpoolP384r1"),
+  ECC_CURVE25519_CERTIFICATE("EccCurve25519"),
+  ECC_CURVE448_CERTIFICATE("EccCurve448"),
+  OTHER("Other");
+
+  companion object {
+    private val OLD_RSA_POLICIES =
+        setOf(
+            "Basic256Sha256",
+            "Aes128_Sha256_RsaOaep",
+            "Aes256_Sha256_RsaPss",
+        )
+
+    private val CERTIFICATE_TYPE_CATEGORIES =
+        mapOf(
+            NodeIds.RsaSha256ApplicationCertificateType to RSA_SHA256_CERTIFICATE,
+            NodeIds.EccNistP256ApplicationCertificateType to ECC_NIST_P256_CERTIFICATE,
+            NodeIds.EccNistP384ApplicationCertificateType to ECC_NIST_P384_CERTIFICATE,
+            NodeIds.EccBrainpoolP256r1ApplicationCertificateType to
+                ECC_BRAINPOOL_P256R1_CERTIFICATE,
+            NodeIds.EccBrainpoolP384r1ApplicationCertificateType to
+                ECC_BRAINPOOL_P384R1_CERTIFICATE,
+            NodeIds.EccCurve25519ApplicationCertificateType to ECC_CURVE25519_CERTIFICATE,
+            NodeIds.EccCurve448ApplicationCertificateType to ECC_CURVE448_CERTIFICATE,
+        )
+
+    fun from(policy: String): EndpointCategory {
+      if (policy == "None") return NONE
+      if (policy in OLD_RSA_POLICIES) return RSA
+
+      val certificateType =
+          runCatching {
+                SecurityPolicy.valueOf(policy).profile.preferredCertificateTypeId().orElse(null)
+              }
+              .getOrNull()
+
+      return CERTIFICATE_TYPE_CATEGORIES[certificateType] ?: OTHER
     }
+  }
+}
 
 private fun endpointUrls(endpoints: List<ServerEndpointSummary>): String {
   val urls = endpoints.map { it.endpointUrl }.filter { it.isNotBlank() }.distinct().sorted()
