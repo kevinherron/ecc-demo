@@ -5,6 +5,15 @@ anonymous, and username-token behavior. It ships two Docker-first tools: a serve
 the demo endpoint matrix, and a client that probes an OPC UA server and prints the results in the
 terminal.
 
+The pinned Milo source lives in a git submodule under `vendor/milo`. Initialize it before building
+the images:
+
+```bash
+git submodule update --init --recursive
+```
+
+Fresh clones can fetch it in one step with `git clone --recurse-submodules <url>`.
+
 ## Build The Images
 
 ```bash
@@ -12,7 +21,8 @@ docker build -f docker/server.Dockerfile -t ecc-demo-server:latest .
 docker build -f docker/client.Dockerfile -t ecc-demo-client:latest .
 ```
 
-The Docker builds install the pinned Milo ECC snapshot before packaging the runnable jars.
+The Docker builds install the Milo ECC snapshot from the submodule before packaging the runnable
+jars.
 
 ## Run The Server Container
 
