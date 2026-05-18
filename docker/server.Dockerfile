@@ -9,7 +9,8 @@ RUN apt-get update \
 
 COPY scripts/bootstrap-milo.sh scripts/bootstrap-milo.sh
 COPY vendor/milo vendor/milo
-RUN ./scripts/bootstrap-milo.sh
+RUN --mount=type=cache,target=/root/.m2 \
+    ./scripts/bootstrap-milo.sh
 
 COPY gradle gradle
 COPY gradlew gradlew
@@ -19,7 +20,9 @@ COPY client/build.gradle.kts client/build.gradle.kts
 COPY server/src server/src
 COPY client/src client/src
 
-RUN ./gradlew --no-daemon :server:shadowJar
+RUN --mount=type=cache,target=/root/.m2 \
+    --mount=type=cache,target=/root/.gradle \
+    ./gradlew --no-daemon :server:shadowJar
 
 FROM eclipse-temurin:25-jre
 WORKDIR /opt/ecc-demo
