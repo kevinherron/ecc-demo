@@ -1,34 +1,23 @@
-# Eclipse Milo ECC Demo 
+# Eclipse Milo ECC Demo
 
-This is a compact Kotlin/JVM OPC UA interoperability demo for exercising Eclipse Milo ECC, RSA-DH,
-anonymous, and username-token behavior. It ships two Docker-first tools: a server that advertises
+This is a compact OPC UA interoperability demo for exercising Eclipse Milo ECC and RSA-DH,
+anonymous and username-token profiles. It ships two Docker-first tools: a server that advertises
 the demo endpoint matrix, and a client that probes an OPC UA server and prints the results in the
 terminal.
 
-The pinned Milo source lives in a git submodule under `vendor/milo`. Initialize it before building
-the images:
+Ready-to-use images are published on Docker Hub — no build step is required:
 
-```bash
-git submodule update --init --recursive
-```
+- `digitalpetri/ecc-demo-server:latest`
+- `digitalpetri/ecc-demo-client:latest`
 
-Fresh clones can fetch it in one step with `git clone --recurse-submodules <url>`.
-
-## Build The Images
-
-```bash
-docker build -f docker/server.Dockerfile -t ecc-demo-server:latest .
-docker build -f docker/client.Dockerfile -t ecc-demo-client:latest .
-```
-
-The Docker builds install the Milo ECC snapshot from the submodule before packaging the runnable
-jars.
+Pull and run them directly. See [Build From Source](#build-from-source) only if you need to modify
+the demo.
 
 ## Run The Server Container
 
 ```bash
 docker run --rm -p 4840:4840 -v "$PWD/data/server:/data/server" \
-  ecc-demo-server:latest --endpoint-address localhost
+  digitalpetri/ecc-demo-server:latest --endpoint-address localhost
 ```
 
 Connect OPC UA clients to:
@@ -49,14 +38,14 @@ Anonymous probe:
 
 ```bash
 docker run --rm -v "$PWD/data/client:/data/client" \
-  ecc-demo-client:latest opc.tcp://host.docker.internal:4840
+  digitalpetri/ecc-demo-client:latest opc.tcp://host.docker.internal:4840
 ```
 
-Username probe:
+Username/password probe:
 
 ```bash
 docker run --rm -v "$PWD/data/client:/data/client" \
-  ecc-demo-client:latest opc.tcp://host.docker.internal:4840 \
+  digitalpetri/ecc-demo-client:latest opc.tcp://host.docker.internal:4840 \
   --username user --password password
 ```
 
@@ -90,8 +79,8 @@ docker compose --profile host up --build server-host
 Both containers accept the application CLI directly after the image name.
 
 ```bash
-docker run --rm ecc-demo-server:latest --help
-docker run --rm ecc-demo-client:latest --help
+docker run --rm digitalpetri/ecc-demo-server:latest --help
+docker run --rm digitalpetri/ecc-demo-client:latest --help
 ```
 
 The server publishes endpoints with these options:
@@ -161,3 +150,26 @@ Default security policies:
 - `ECC_curve448_ChaChaPoly`
 - `RSA_DH_AesGcm`
 - `RSA_DH_ChaChaPoly`
+
+## Build From Source
+
+Building locally is only needed when modifying the demo. The published
+`digitalpetri/ecc-demo-server:latest` and `digitalpetri/ecc-demo-client:latest` images are the
+recommended path for everything else.
+
+The pinned Milo source lives in a git submodule under `vendor/milo`. Initialize it before building:
+
+```bash
+git submodule update --init --recursive
+```
+
+Fresh clones can fetch it in one step with `git clone --recurse-submodules <url>`.
+
+```bash
+docker build -f docker/server.Dockerfile -t ecc-demo-server:latest .
+docker build -f docker/client.Dockerfile -t ecc-demo-client:latest .
+```
+
+The Docker builds install the Milo ECC snapshot from the submodule before packaging the runnable
+jars. Local builds use the unprefixed `ecc-demo-server:latest` / `ecc-demo-client:latest` tags so
+they do not overwrite a previously pulled `digitalpetri/...` image.
