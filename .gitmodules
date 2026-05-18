@@ -1,0 +1,4 @@
+[submodule "vendor/milo"]
+	path = vendor/milo
+	url = https://github.com/kevinherron/milo.git
+	branch = feature/ecc

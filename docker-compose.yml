@@ -1,0 +1,65 @@
+name: ecc-demo
+
+x-server-service: &server-service
+  build:
+    context: .
+    dockerfile: docker/server.Dockerfile
+  image: ecc-demo-server:latest
+  volumes:
+    - ./data/server:/data/server
+
+services:
+  server:
+    <<: *server-service
+    command:
+      - --endpoint-address
+      - server
+      - --username
+      - user
+      - --password
+      - password
+
+  server-host:
+    <<: *server-service
+    profiles:
+      - host
+    ports:
+      - "4840:4840"
+    command:
+      - --endpoint-address
+      - localhost
+      - --username
+      - user
+      - --password
+      - password
+
+  client:
+    profiles:
+      - interop
+    build:
+      context: .
+      dockerfile: docker/client.Dockerfile
+    image: ecc-demo-client:latest
+    depends_on:
+      - server
+    volumes:
+      - ./data/client:/data/client
+    entrypoint:
+      - /usr/bin/bash
+      - -lc
+      - |
+        for _ in {1..60}; do
+          if timeout 1 bash -c '</dev/tcp/server/4840' 2>/dev/null; then
+            exec java --enable-native-access=ALL-UNNAMED --sun-misc-unsafe-memory-access=allow -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -jar /opt/ecc-demo/ecc-demo-client.jar "$@"
+          fi
+          sleep 1
+        done
+        echo "Timed out waiting for opc.tcp://server:4840" >&2
+        exit 1
+      - --
+    command:
+      - opc.tcp://server:4840
+      - --username
+      - user
+      - --password
+      - password

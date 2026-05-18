@@ -1,0 +1,41 @@
+# Gradle and Kotlin build output
+.gradle/
+.kotlin/
+build/
+*/build/
+out/
+
+# Keep the Gradle wrapper jar trackable if wrapper files are committed.
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local application runtime data and generated certificates
+/data/
+
+# Milo bootstrap checkout
+/vendor/milo/
+
+# JVM and tool logs
+*.class
+*.log
+hs_err_pid*
+replay_pid*
+
+# Local environment files
+local.properties
+.env
+.env.*
+!.env.example
+
+# IDE/editor metadata
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
