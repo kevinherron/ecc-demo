@@ -27,7 +27,7 @@ Connect OPC UA clients to:
 opc.tcp://localhost:4840
 ```
 
-The mounted `./data/server` directory persists the server's local application certificate and key
+The mounted `/data/server` directory persists the server's local application certificate and key
 between runs. If clients connect through a hostname or address other than `localhost`, pass
 that value with `--endpoint-address`.
 
@@ -53,14 +53,14 @@ docker run --rm -v "$PWD/data/client:/data/client" \
 On Docker Desktop, `host.docker.internal` reaches a server running on the host. For a remote server,
 use its real hostname or IP address, for example `opc.tcp://192.0.2.10:4840`.
 
-The mounted `./data/client` directory persists the client's local application certificate and key
+The mounted `/data/client` directory persists the client's local application certificate and key
 between runs. The client auto-trusts remote certificates for interoperability probing and reports
 that behavior in the terminal output.
 
 ## Run The Built-In Interop Probe
 
 This starts the server and then runs the client against it inside the Docker Compose network.
-The compose interop server does not publish port `4840` on the host, so the probe can run while
+The Compose interop server does not publish port `4840` on the host, so the probe can run while
 another local OPC UA server is already using that port.
 
 ```bash
