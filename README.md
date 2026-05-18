@@ -173,3 +173,10 @@ docker build -f docker/client.Dockerfile -t ecc-demo-client:latest .
 The Docker builds install the Milo ECC snapshot from the submodule before packaging the runnable
 jars. Local builds use the unprefixed `ecc-demo-server:latest` / `ecc-demo-client:latest` tags so
 they do not overwrite a previously pulled `digitalpetri/...` image.
+
+To build with Gradle outside of Docker, install the Milo snapshot artifacts into your local Maven
+repository first:
+
+```bash
+./scripts/bootstrap-milo.sh
+```
