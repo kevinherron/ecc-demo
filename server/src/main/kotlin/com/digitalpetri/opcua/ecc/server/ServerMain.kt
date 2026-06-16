@@ -10,9 +10,23 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import java.util.concurrent.CountDownLatch
 
+/** SLF4J Simple Logger system property controlling the default log level. */
+private const val SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY = "org.slf4j.simpleLogger.defaultLogLevel"
+
+/** Quiet default that keeps the startup output readable; raise it with `--log-level`. */
+private const val DEFAULT_LOG_LEVEL = "warn"
+
+/** Log levels accepted by `--log-level`, from least to most verbose. */
+private val ALLOWED_LOG_LEVELS = listOf("error", "warn", "info", "debug", "trace")
+
 /** Runs the demo server CLI. */
 fun main(args: Array<String>) {
-  System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "warn")
+  // Only apply the quiet default when nothing was supplied externally (for example
+  // -Dorg.slf4j.simpleLogger.defaultLogLevel=debug or JAVA_TOOL_OPTIONS). The --log-level option
+  // can still raise the level from run() before the first Milo logger is created.
+  if (System.getProperty(SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY) == null) {
+    System.setProperty(SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY, DEFAULT_LOG_LEVEL)
+  }
   ServerCommand().main(args)
 }
 
@@ -186,7 +200,17 @@ private class ServerCommand :
           )
           .multiple()
 
+  private val logLevel by
+      option(
+          "--log-level",
+          help =
+              "Override the SLF4J log level (error, warn, info, debug, trace). Raise to debug or " +
+                  "trace to capture Milo server-side handshake and session diagnostics.",
+      )
+
   override fun run() {
+    applyLogLevel(logLevel)
+
     val options =
         ServerOptions(
             bindAddresses = bindAddresses,
@@ -215,6 +239,24 @@ private class ServerCommand :
       shutdown.await()
     }
   }
+}
+
+/**
+ * Applies an optional `--log-level` override before the server creates any Milo logger.
+ *
+ * @param level requested SLF4J level name, or null to keep the current level.
+ * @throws UsageError if the level is not one of [ALLOWED_LOG_LEVELS].
+ */
+private fun applyLogLevel(level: String?) {
+  if (level == null) return
+
+  val normalized = level.trim().lowercase()
+  if (normalized !in ALLOWED_LOG_LEVELS) {
+    throw UsageError(
+        "invalid log-level '$level'. Expected one of: ${ALLOWED_LOG_LEVELS.joinToString(", ")}"
+    )
+  }
+  System.setProperty(SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY, normalized)
 }
 
 /**

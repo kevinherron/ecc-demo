@@ -5,12 +5,27 @@ import com.github.ajalt.clikt.core.UsageError
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.multiple
 import com.github.ajalt.clikt.parameters.options.option
 
+/** SLF4J Simple Logger system property controlling the default log level. */
+private const val SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY = "org.slf4j.simpleLogger.defaultLogLevel"
+
+/** Quiet default that keeps the probe report readable; raise it with `--log-level`. */
+private const val DEFAULT_LOG_LEVEL = "warn"
+
+/** Log levels accepted by `--log-level`, from least to most verbose. */
+private val ALLOWED_LOG_LEVELS = listOf("error", "warn", "info", "debug", "trace")
+
 /** Runs the client probe CLI. */
 fun main(args: Array<String>) {
-  System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "warn")
+  // Only apply the quiet default when nothing was supplied externally (for example
+  // -Dorg.slf4j.simpleLogger.defaultLogLevel=debug or JAVA_TOOL_OPTIONS). The --log-level option
+  // can still raise the level from run() before the first Milo logger is created.
+  if (System.getProperty(SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY) == null) {
+    System.setProperty(SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY, DEFAULT_LOG_LEVEL)
+  }
   ClientCommand().main(args)
 }
 
@@ -123,7 +138,29 @@ private class ClientCommand :
           )
           .multiple()
 
+  private val logLevel by
+      option(
+          "--log-level",
+          help =
+              "Override the SLF4J log level (error, warn, info, debug, trace). Raise to debug or " +
+                  "trace to capture the Milo secure-channel handshake.",
+      )
+
+  private val debugSignature by
+      option(
+              "--debug-signature",
+              help =
+                  "Enable Milo's CreateSession server-signature mismatch diagnostics (sets " +
+                      "-Dmilo.debug.sessionSignature). Pair with --log-level debug.",
+          )
+          .flag()
+
   override fun run() {
+    applyLogLevel(logLevel)
+    if (debugSignature) {
+      System.setProperty("milo.debug.sessionSignature", "true")
+    }
+
     if (username != null && password == null) {
       throw UsageError("--password is required when --username is supplied")
     }
@@ -148,6 +185,24 @@ private class ClientCommand :
         )
     )
   }
+}
+
+/**
+ * Applies an optional `--log-level` override before the probe creates any Milo logger.
+ *
+ * @param level requested SLF4J level name, or null to keep the current level.
+ * @throws UsageError if the level is not one of [ALLOWED_LOG_LEVELS].
+ */
+private fun applyLogLevel(level: String?) {
+  if (level == null) return
+
+  val normalized = level.trim().lowercase()
+  if (normalized !in ALLOWED_LOG_LEVELS) {
+    throw UsageError(
+        "invalid log-level '$level'. Expected one of: ${ALLOWED_LOG_LEVELS.joinToString(", ")}"
+    )
+  }
+  System.setProperty(SIMPLE_LOGGER_DEFAULT_LEVEL_PROPERTY, normalized)
 }
 
 /**
