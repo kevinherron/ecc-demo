@@ -100,18 +100,21 @@ The server publishes endpoints with these options:
 | `--policy`           | all default policies               | Security policy inclusion filter. Repeat or pass comma-separated values.             |
 | `--mode`             | `None`, `Sign`, `SignAndEncrypt`   | Message security mode inclusion filter. Repeat or pass comma-separated values.       |
 | `--token`            | `Anonymous`, `UserName`            | User token inclusion filter. Repeat or pass comma-separated values.                  |
+| `--log-level`        | `warn`                             | SLF4J log level. Use `debug` or `trace` for Milo handshake and session diagnostics.  |
 
 The client probes a discovery URL with these options:
 
-| Option       | Default                          | Purpose                                                                        |
-|--------------|----------------------------------|--------------------------------------------------------------------------------|
-| `TARGET_URL` | required                         | OPC UA discovery URL to probe.                                                 |
-| `--data-dir` | `/data/client`                   | Directory for the client's local application certificate and key.              |
-| `--username` | omitted                          | Username to use for username-token attempts. Requires `--password`.            |
-| `--password` | omitted                          | Password to use for username-token attempts.                                   |
-| `--policy`   | all default policies             | Security policy inclusion filter. Repeat or pass comma-separated values.       |
-| `--mode`     | `None`, `Sign`, `SignAndEncrypt` | Message security mode inclusion filter. Repeat or pass comma-separated values. |
-| `--token`    | `Anonymous`, `UserName`          | User token inclusion filter. Repeat or pass comma-separated values.            |
+| Option              | Default                          | Purpose                                                                        |
+|---------------------|----------------------------------|--------------------------------------------------------------------------------|
+| `TARGET_URL`        | required                         | OPC UA discovery URL to probe.                                                 |
+| `--data-dir`        | `/data/client`                   | Directory for the client's local application certificate and key.              |
+| `--username`        | omitted                          | Username to use for username-token attempts. Requires `--password`.            |
+| `--password`        | omitted                          | Password to use for username-token attempts.                                   |
+| `--policy`          | all default policies             | Security policy inclusion filter. Repeat or pass comma-separated values.       |
+| `--mode`            | `None`, `Sign`, `SignAndEncrypt` | Message security mode inclusion filter. Repeat or pass comma-separated values. |
+| `--token`           | `Anonymous`, `UserName`          | User token inclusion filter. Repeat or pass comma-separated values.            |
+| `--log-level`       | `warn`                           | SLF4J log level. Use `debug` or `trace` for Milo secure-channel diagnostics.   |
+| `--debug-signature` | disabled                         | Enable Milo CreateSession server-signature mismatch diagnostics.               |
 
 Policy, mode, and token filters are allowlists. Omitting a filter selects the full default list;
 supplying one narrows the server endpoints or client attempts to the named values. There is no
@@ -178,5 +181,12 @@ To build with Gradle outside of Docker, install the Milo snapshot artifacts into
 repository first:
 
 ```bash
-./scripts/bootstrap-milo.sh
+mise exec -- ./scripts/bootstrap-milo.sh
+mise exec -- ./gradlew build
+```
+
+Build the shaded runnable jars with:
+
+```bash
+mise exec -- ./gradlew :server:shadowJar :client:shadowJar
 ```

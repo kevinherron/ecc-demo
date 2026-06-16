@@ -127,14 +127,14 @@ comment inside the body, not in KDoc. KDoc is for **callers**.
 - Root build: `settings.gradle.kts`, `build.gradle.kts`, `gradle.properties`
 - Milo bootstrap: `scripts/bootstrap-milo.sh`
 - Docker usage: `docker/README.md`, `docker-compose.yml`
-- Server CLI: `server/src/main/kotlin/com/digitalpetri/eccdemo/server/ServerMain.kt`
-- Server runtime/certificates/endpoints: `server/src/main/kotlin/com/digitalpetri/eccdemo/server/ServerSecurity.kt`
-- Server namespace: `server/src/main/kotlin/com/digitalpetri/eccdemo/server/DemoNamespace.kt`
-- Server terminal output: `server/src/main/kotlin/com/digitalpetri/eccdemo/server/ServerTerminal.kt`
-- Client CLI: `client/src/main/kotlin/com/digitalpetri/eccdemo/client/ClientMain.kt`
-- Client runtime/certificates: `client/src/main/kotlin/com/digitalpetri/eccdemo/client/ClientSecurity.kt`
-- Client discovery/probing: `client/src/main/kotlin/com/digitalpetri/eccdemo/client/Probe.kt`
-- Client terminal output: `client/src/main/kotlin/com/digitalpetri/eccdemo/client/ClientTerminal.kt`
+- Server CLI: `server/src/main/kotlin/com/digitalpetri/opcua/ecc/server/ServerMain.kt`
+- Server runtime/certificates/endpoints: `server/src/main/kotlin/com/digitalpetri/opcua/ecc/server/ServerSecurity.kt`
+- Server namespace: `server/src/main/kotlin/com/digitalpetri/opcua/ecc/server/DemoNamespace.kt`
+- Server terminal output: `server/src/main/kotlin/com/digitalpetri/opcua/ecc/server/ServerTerminal.kt`
+- Client CLI: `client/src/main/kotlin/com/digitalpetri/opcua/ecc/client/ClientMain.kt`
+- Client runtime/certificates: `client/src/main/kotlin/com/digitalpetri/opcua/ecc/client/ClientSecurity.kt`
+- Client discovery/probing: `client/src/main/kotlin/com/digitalpetri/opcua/ecc/client/Probe.kt`
+- Client terminal output: `client/src/main/kotlin/com/digitalpetri/opcua/ecc/client/ClientTerminal.kt`
 
 ## Toolchain
 
@@ -200,12 +200,18 @@ Server defaults:
 - `--endpoint-address localhost`
 - `--port 4840`
 - `--data-dir /data/server`
+- `--application-uri urn:eclipse:milo:ecc-demo:server`
+- `--application-name "ECC Demo Server"`
+- `--dns-name localhost`
+- `--ip-address 127.0.0.1`
 - `--username user`
 - `--password password`
+- `--log-level warn`
 
 Client defaults:
 
 - `--data-dir /data/client`
+- `--log-level warn`
 - Username attempts are only made when both `--username` and `--password` are supplied.
 
 Both apps accept repeatable or comma-separated filters:
@@ -214,8 +220,13 @@ Both apps accept repeatable or comma-separated filters:
 - `--mode`
 - `--token`
 
-Use exact Milo enum/security policy names from the defaults in `ServerMain.kt` and `ClientMain.kt`.
-Invalid names should fail early with clear Clikt usage errors.
+Both apps accept `--log-level` values `error`, `warn`, `info`, `debug`, or `trace` for Milo
+diagnostics. The client also accepts `--debug-signature` to enable Milo's CreateSession
+server-signature mismatch diagnostics.
+
+Use canonical Milo enum/security policy names from the defaults in `ServerMain.kt` and
+`ClientMain.kt`; filter parsing is case-insensitive and invalid names should fail early with clear
+Clikt usage errors.
 
 ## Docker
 
