@@ -35,10 +35,14 @@ import org.eclipse.milo.opcua.stack.core.util.CertificateUtil
 import org.eclipse.milo.opcua.stack.transport.client.tcp.OpcTcpClientTransportConfigBuilder
 
 private val DISCOVERY_TIMEOUT: Duration = Duration.ofSeconds(10)
-private val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(15)
+// Per-request and overall-connect budgets are sized for high-latency remote interop targets
+// (VPN/LAN OPC UA servers), where a single connect routinely runs several seconds and the first,
+// coldest attempt occasionally spikes higher. CONNECT_TIMEOUT must cover the full OPN +
+// CreateSession + ActivateSession sequence, so it stays well above the per-request timeout.
+private val CONNECT_TIMEOUT: Duration = Duration.ofSeconds(45)
 private val READ_TIMEOUT: Duration = Duration.ofSeconds(10)
 private val DISCONNECT_TIMEOUT: Duration = Duration.ofSeconds(5)
-private const val REQUEST_TIMEOUT_MILLIS = 5_000
+private const val REQUEST_TIMEOUT_MILLIS = 15_000
 private const val SESSION_TIMEOUT_MILLIS = 10_000
 private val HEX: HexFormat = HexFormat.of()
 private val STANDARD_NODE_IDS =
