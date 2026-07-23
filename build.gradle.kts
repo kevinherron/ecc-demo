@@ -10,7 +10,7 @@ group = "com.digitalpetri"
 
 version = "0.1.0-SNAPSHOT"
 
-val miloVersion = "1.1.4-SNAPSHOT"
+val miloVersion = "1.2.0-SNAPSHOT"
 val bouncycastleVersion = "1.84"
 val cliktVersion = "5.1.0"
 val mordantVersion = "3.0.2"

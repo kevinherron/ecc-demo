@@ -8,8 +8,8 @@ behavior.
 
 **Primary dependencies:**
 
-- **Eclipse Milo `1.1.4-SNAPSHOT`**: OPC UA client/server runtime. The build resolves this from
-  `mavenLocal()` before Maven Central.
+- **Eclipse Milo `1.2.0-SNAPSHOT`**: OPC UA client/server runtime. The build resolves this from
+  Sonatype's Maven snapshot repository.
 - **Bouncy Castle**: certificate and cryptography support.
 - **Clikt**: command-line parsing for both apps.
 - **Mordant**: terminal rendering for startup and probe summaries.
@@ -46,8 +46,6 @@ root Gradle project
   `None`/`Sign`/`SignAndEncrypt` modes, and anonymous plus username tokens.
 - Keep the current compact structure. Prefer top-level Kotlin functions and small data classes over
   new framework layers.
-- If Milo snapshot artifacts are missing, run `mise exec -- ./scripts/bootstrap-milo.sh` to install
-  the required Milo snapshot artifacts into `mavenLocal()`.
 
 ## KDoc Guidelines
 
@@ -125,7 +123,6 @@ comment inside the body, not in KDoc. KDoc is for **callers**.
 ## Key Entry Points
 
 - Root build: `settings.gradle.kts`, `build.gradle.kts`, `gradle.properties`
-- Milo bootstrap: `scripts/bootstrap-milo.sh`
 - Docker usage: `docker/README.md`, `docker-compose.yml`
 - Server CLI: `server/src/main/kotlin/com/digitalpetri/opcua/ecc/server/ServerMain.kt`
 - Server runtime/certificates/endpoints: `server/src/main/kotlin/com/digitalpetri/opcua/ecc/server/ServerSecurity.kt`
@@ -147,7 +144,6 @@ instructions should use the explicit `mise exec --` form.
 
 | Command | Purpose |
 | --- | --- |
-| `mise exec -- ./scripts/bootstrap-milo.sh` | Build/install the required Milo snapshot artifacts into `mavenLocal()` |
 | `mise exec -- ./gradlew build` | Compile and package both apps |
 | `mise exec -- ./gradlew clean build` | Clean, compile, and package both apps |
 | `mise exec -- ./gradlew :server:compileKotlin` | Compile only the server module |

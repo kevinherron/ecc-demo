@@ -160,28 +160,19 @@ Building locally is only needed when modifying the demo. The published
 `digitalpetri/ecc-demo-server:latest` and `digitalpetri/ecc-demo-client:latest` images are the
 recommended path for everything else.
 
-The pinned Milo source lives in a git submodule under `vendor/milo`. Initialize it before building:
-
-```bash
-git submodule update --init --recursive
-```
-
-Fresh clones can fetch it in one step with `git clone --recurse-submodules <url>`.
+The build resolves the Milo `1.2.0-SNAPSHOT` artifacts from Sonatype's Maven snapshot repository.
 
 ```bash
 docker build -f docker/server.Dockerfile -t ecc-demo-server:latest .
 docker build -f docker/client.Dockerfile -t ecc-demo-client:latest .
 ```
 
-The Docker builds install the Milo ECC snapshot from the submodule before packaging the runnable
-jars. Local builds use the unprefixed `ecc-demo-server:latest` / `ecc-demo-client:latest` tags so
-they do not overwrite a previously pulled `digitalpetri/...` image.
+Local builds use the unprefixed `ecc-demo-server:latest` / `ecc-demo-client:latest` tags so they do
+not overwrite a previously pulled `digitalpetri/...` image.
 
-To build with Gradle outside of Docker, install the Milo snapshot artifacts into your local Maven
-repository first:
+To build with Gradle outside of Docker:
 
 ```bash
-mise exec -- ./scripts/bootstrap-milo.sh
 mise exec -- ./gradlew build
 ```
 

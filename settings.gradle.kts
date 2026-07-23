@@ -10,7 +10,11 @@ pluginManagement {
 dependencyResolutionManagement {
   repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
   repositories {
-    mavenLocal()
+    maven {
+      name = "SonatypeSnapshots"
+      url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+      mavenContent { snapshotsOnly() }
+    }
     mavenCentral()
   }
 }

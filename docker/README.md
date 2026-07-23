@@ -1,12 +1,7 @@
 # Docker
 
-Initialize the Milo submodule before building. The Dockerfiles copy `vendor/milo`
-into the build context so the resulting image is pinned to the SHA tracked in
-this repository:
-
-```bash
-git submodule update --init --recursive
-```
+The Dockerfiles resolve the Milo `1.2.0-SNAPSHOT` artifacts from Sonatype's Maven snapshot
+repository, so builds do not depend on artifacts already present on the host.
 
 Build the images:
 
