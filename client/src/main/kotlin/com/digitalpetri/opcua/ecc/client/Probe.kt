@@ -707,7 +707,7 @@ private fun clientConfig(
         .setProductUri("urn:eclipse:milo:ecc-demo")
         .setRequestTimeout(uint(REQUEST_TIMEOUT_MILLIS))
         .setSessionTimeout(uint(SESSION_TIMEOUT_MILLIS))
-        .setCertificateManager(security.certificateManager)
+        .setCertificateGroup(security.certificateGroup)
         .setCertificateValidator(security.certificateValidator)
         .setIdentityProvider(identityProvider)
         // Interop targets often advertise hostnames that differ from the caller's URL, especially
