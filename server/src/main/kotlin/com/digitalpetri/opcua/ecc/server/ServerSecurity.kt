@@ -19,7 +19,7 @@ import org.eclipse.milo.opcua.stack.core.NodeIds
 import org.eclipse.milo.opcua.stack.core.Stack
 import org.eclipse.milo.opcua.stack.core.security.AbstractCertificateFactory
 import org.eclipse.milo.opcua.stack.core.security.CertificateValidator
-import org.eclipse.milo.opcua.stack.core.security.DefaultApplicationGroup
+import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateGroup
 import org.eclipse.milo.opcua.stack.core.security.DefaultCertificateManager
 import org.eclipse.milo.opcua.stack.core.security.KeyStoreCertificateStore
 import org.eclipse.milo.opcua.stack.core.security.MemoryCertificateQuarantine
@@ -112,7 +112,7 @@ internal data class ServerStartupSummary(
  */
 internal class ServerCertificateContext(
     val certificateManager: DefaultCertificateManager,
-    val applicationGroup: DefaultApplicationGroup,
+    val certificateGroup: DefaultCertificateGroup,
     private val certificateStore: KeyStoreCertificateStore,
     val keyStorePath: Path,
 ) : AutoCloseable {
@@ -190,7 +190,7 @@ private constructor(
   }
 
   private fun startupSummary(): ServerStartupSummary {
-    val certificatesByRawBytes = certificateLookup(certificateContext.applicationGroup)
+    val certificatesByRawBytes = certificateLookup(certificateContext.certificateGroup)
     val endpoints =
         server.applicationContext.endpointDescriptions.map { endpoint ->
           endpointSummary(endpoint, certificatesByRawBytes)
@@ -314,27 +314,29 @@ private fun initializeServerCertificates(options: ServerOptions): ServerCertific
   val trustListManager = MemoryTrustListManager()
   val certificateQuarantine = MemoryCertificateQuarantine()
   val certificateValidator = QuietInsecureCertificateValidator
-  val applicationGroup =
-      DefaultApplicationGroup.createAndInitialize(
+  val certificateGroup =
+      DefaultCertificateGroup(
           trustListManager,
           certificateStore,
-          InteropCertificateFactory(
-              ServerCertificateConfig(
-                  applicationUri = options.applicationUri,
-                  commonName = options.applicationName,
-                  organization = "Eclipse Milo",
-                  dnsNames = options.dnsNames,
-                  ipAddresses = options.ipAddresses,
-              ),
-          ),
+          certificateQuarantine,
           certificateValidator,
           REQUIRED_APPLICATION_CERTIFICATE_TYPE_IDS,
       )
-  val certificateManager = DefaultCertificateManager(certificateQuarantine, applicationGroup)
+  InteropCertificateFactory(
+          ServerCertificateConfig(
+              applicationUri = options.applicationUri,
+              commonName = options.applicationName,
+              organization = "Eclipse Milo",
+              dnsNames = options.dnsNames,
+              ipAddresses = options.ipAddresses,
+          ),
+      )
+      .createMissingCertificates(certificateGroup)
+  val certificateManager = DefaultCertificateManager(certificateGroup)
 
   return ServerCertificateContext(
       certificateManager = certificateManager,
-      applicationGroup = applicationGroup,
+      certificateGroup = certificateGroup,
       certificateStore = certificateStore,
       keyStorePath = keyStorePath,
   )
@@ -503,9 +505,9 @@ private fun createTransport(transportProfile: TransportProfile): OpcServerTransp
 }
 
 private fun certificateLookup(
-    applicationGroup: DefaultApplicationGroup
+    certificateGroup: DefaultCertificateGroup
 ): Map<ByteString, ServerCertificateSummary> =
-    applicationGroup.certificateEntries.associate { entry ->
+    certificateGroup.certificateEntries.associate { entry ->
       val certificate = entry.certificateChain[0]
       ByteString.of(certificate.encoded) to
           ServerCertificateSummary(

@@ -16,14 +16,14 @@ internal const val CLIENT_APPLICATION_URI = "urn:eclipse:milo:ecc-demo:client"
 /**
  * Owns the client's local OPC UA application identity for one probe run.
  *
- * Milo uses the certificate manager when opening secure channels and the certificate validator when
- * handling remote server certificates and username-token encryption. Closing this context releases
- * the local keystore; the demo intentionally persists only the client's own identity.
+ * Milo selects the local identity from the certificate group when opening secure channels and uses
+ * the certificate validator when handling remote server certificates and username-token encryption.
+ * Closing this context releases the local keystore; the demo intentionally persists only the
+ * client's own identity.
  */
 internal data class ClientSecurityContext(
     val keyStorePath: Path,
-    val applicationGroup: DefaultApplicationGroup,
-    val certificateManager: DefaultCertificateManager,
+    val certificateGroup: DefaultCertificateGroup,
     val certificateValidator: CertificateValidator,
     private val certificateStore: KeyStoreCertificateStore,
 ) : AutoCloseable {
@@ -55,21 +55,19 @@ internal fun initializeClientSecurity(options: ClientOptions): ClientSecurityCon
   // Keep the trust-list and rejected-certificate state in memory. The demo reports auto-trust in
   // the terminal instead of teaching operators to manage persistent trust directories.
   val certificateValidator = QuietInsecureCertificateValidator
-  val applicationGroup =
-      DefaultApplicationGroup.createAndInitialize(
+  val certificateGroup =
+      DefaultCertificateGroup(
           MemoryTrustListManager(),
           certificateStore,
-          ClientApplicationCertificateFactory(),
+          MemoryCertificateQuarantine(),
           certificateValidator,
           REQUIRED_APPLICATION_CERTIFICATE_TYPE_IDS,
       )
-  val certificateManager =
-      DefaultCertificateManager(MemoryCertificateQuarantine(), applicationGroup)
+  ClientApplicationCertificateFactory().createMissingCertificates(certificateGroup)
 
   return ClientSecurityContext(
       keyStorePath = keyStorePath,
-      applicationGroup = applicationGroup,
-      certificateManager = certificateManager,
+      certificateGroup = certificateGroup,
       certificateValidator = certificateValidator,
       certificateStore = certificateStore,
   )
