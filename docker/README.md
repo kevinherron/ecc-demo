@@ -10,6 +10,17 @@ docker build -f docker/server.Dockerfile -t ecc-demo-server:latest .
 docker build -f docker/client.Dockerfile -t ecc-demo-client:latest .
 ```
 
+A cached build can keep an older Milo snapshot. BuildKit reuses the Gradle step when the sources
+have not changed, and Gradle reuses a snapshot it resolved in the last 24 hours from the
+`/root/.gradle` cache mount. Add `--no-cache` when building images to publish or when you need the
+newest Milo snapshot. It also starts with an empty Gradle cache, so the build downloads Gradle and
+every dependency again:
+
+```bash
+docker build --no-cache -f docker/server.Dockerfile -t ecc-demo-server:latest .
+docker build --no-cache -f docker/client.Dockerfile -t ecc-demo-client:latest .
+```
+
 Run the server for host access on port 4840:
 
 ```bash
